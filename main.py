@@ -25,7 +25,8 @@ for folder in folders:
             # If the file extension is .mod
             if file_ext == ".mod":
                 if os.path.exists(os.path.join(root, folder + ".mod")):
-                    continue
+                    print(folder + ".mod already exists")
+                    break
                 else:
                     # Copy the file to the folder in which the script is located
                     shutil.copy(file_path, root)
@@ -48,8 +49,17 @@ for folder in folders:
                     # Add a new line at the end of the file with the full path from which the file was copied
                     mod_file.write("\n" + "path=" + '"' + folder_path + '"' + "\n")
 
+                print("Installed " + folder_path)
+
+            elif file_ext == ".zip" and ".rar":
+                print("ERROR: " + file_path.replace("/", "\\") + " is not a .mod, unpack it and run script again")
+                break
+
             else:
                 pass
 
     else:
         pass
+
+input("Press Enter to exit...")
+exit()

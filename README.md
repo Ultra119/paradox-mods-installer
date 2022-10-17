@@ -6,7 +6,7 @@ A simple script that allows you to automatically copy and edit description.mod t
 
 1. Unpack mods into Stellaris mod folder (ex. `mod folder/<mod name>/description.mod`)
 
-2. Put main.py into Stellaris mod folder
+2. Put start.bat and main.py into Stellaris mod folder
 
-3. Start main.py
+3. Run start.bat
 
