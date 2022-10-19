@@ -7,7 +7,7 @@ from pathlib import Path
 def get_root_path():
     return Path.cwd()
 
-def extract_mod(file_path: Path):
+def edit_mod(file_path: Path):
     path_to_copy = get_root_path() / (file_path.parent.name + '.mod')
     shutil.copy(str(file_path), str(path_to_copy))
 
@@ -38,22 +38,34 @@ def main():
                 files = [f for f in mod_folder_path.iterdir() if f.is_file()]
                 for file in files:
                     if file.suffix == '.mod':
-                        extract_mod(file)
+                        edit_mod(file)
                     elif file.suffix in ('.zip', '.rar'):
-                        print("INFO: " + str(file) + " is not a .mod, unpacking...")
-                        shutil.unpack_archive(str(file), str(mod_folder_path))
-                        files_new = [f for f in mod_folder_path.iterdir() if f.is_file() and f.suffix == '.mod']
-                        for file_unpacked in files_new:
-                            extract_mod(file_unpacked)
+                        if not [i for i in mod_folder_path.glob('*.mod')]:
+                            print("INFO: " + str(file) + " is not a .mod, unpacking...")
+                            shutil.unpack_archive(str(file), str(mod_folder_path))
+                            files_new = [f for f in mod_folder_path.iterdir() if
+                                         f.is_file() and f.suffix == '.mod']
+                            for file_unpacked in files_new:
+                                edit_mod(file_unpacked)
+
+                        else:
+                            print("INFO: " + str(file) + " is already unpacked")
+                            continue
+
 
             elif mod_folder_path.is_file():
                 if mod_folder_path.suffix in ('.zip', '.rar'):
-                    print("INFO: " + str(mod_folder_path) + " is not a .mod, unpacking...")
-                    shutil.unpack_archive(str(mod_folder_path), str(root_path / mod_folder_path.stem))
-                    files_new = [f for f in (root_path / mod_folder_path.stem).iterdir() if f.is_file() and f.suffix == '.mod']
-                    for file_unpacked in files_new:
-                        extract_mod(file_unpacked)
-
+                    if not (root_path / (mod_folder_path.stem + '.mod')).exists():
+                        print("INFO: " + str(mod_folder_path) + " is not a .mod, unpacking...")
+                        shutil.unpack_archive(str(mod_folder_path), str(root_path / mod_folder_path.stem))
+                        files_new = [f for f in (root_path / mod_folder_path.stem).iterdir() if
+                                        f.is_file() and f.suffix == '.mod']
+                        for file_unpacked in files_new:
+                            edit_mod(file_unpacked)
+                            
+                    else:
+                        print("INFO: " + str(mod_folder_path) + " is already unpacked")
+                        continue
 main()
 
 input("Press Enter to exit...")
