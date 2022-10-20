@@ -21,7 +21,7 @@ def edit_mod(file_path: Path):
         mod_file.truncate()
 
         # Add a new line at the end of the file with the full path from which the file was copied
-        mod_file.write("\n" + "path=" + '"' + str(file_path.parent) + '"' + "\n")
+        mod_file.write("\n" + "path=" + '"' + str(file_path.parent).replace("\\", "/") + '"' + "\n")
 
     print("INFO: " + str(file_path.parent) + " installed!")
 
