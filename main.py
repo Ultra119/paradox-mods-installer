@@ -1,17 +1,20 @@
-# Stellaris Mods Installer v1.2 by Ultra119
+# Stellaris Mods Installer v1.3 by Ultra119
 
 import shutil
 
 from pathlib import Path
 
 def get_root_path():
+    # Returns the current working directory as a Path object.
     return Path.cwd()
 
 def edit_mod(file_path: Path):
-    path_to_copy = get_root_path() / (file_path.parent.name + '.mod')
-    shutil.copy(str(file_path), str(path_to_copy))
+    # Copies the .mod file to the root directory and modifies its contents to include the full path of the original
+    # .mod file in a new line at the end of the file.
+    mod_file_copy_path = get_root_path() / (file_path.parent.name + '.mod')
+    shutil.copy(str(file_path), str(mod_file_copy_path))
 
-    with path_to_copy.open("r+") as mod_file:
+    with mod_file_copy_path.open("r+") as mod_file:
         # Delete the line that starts with path=, if it is present in the file
         lines = mod_file.readlines()
         mod_file.seek(0)
@@ -23,49 +26,60 @@ def edit_mod(file_path: Path):
         # Add a new line at the end of the file with the full path from which the file was copied
         mod_file.write("\n" + "path=" + '"' + str(file_path.parent).replace("\\", "/") + '"' + "\n")
 
-    print("INFO: " + str(file_path.parent) + " installed!")
+    log(f"{file_path.parent} installed!", "info")
+
+def unpack_archive(archive_path: Path):
+    # Unpacks the specified archive to the root directory and returns a list of .mod files found in the unpacked
+    # directory.
+    if archive_path.suffix in ('.zip', '.rar'):
+        log(f"{archive_path} is not a .mod, unpacking...", "info")
+        shutil.unpack_archive(str(archive_path), str(get_root_path() / archive_path.stem))
+        return [f for f in (get_root_path() / archive_path.stem).iterdir() if f.is_file() and f.suffix == '.mod']
+    else:
+        # log(f"{archive_path} is not a .zip or .rar archive", "warning")
+        return []
+
+def install_mod(mod_path: Path):
+    # Installs the specified .mod file.
+    if mod_path.suffix == '.mod':
+        edit_mod(mod_path)
+    else:
+        log(f"{mod_path} is not a .mod file", "warning")
+
+def log(message: str, level: str):
+    # Prints the specified message to the console with a prefix indicating the log level.
+    print(f"[{level.upper()}] {message}")
+
 
 def main():
     root_path = get_root_path()
-    for mod_folder_path in root_path.iterdir():
-        path_file_mod = root_path / (mod_folder_path.name + '.mod')
-        if path_file_mod.exists():
-            print("INFO: " + str(path_file_mod) + " already exists")
+    for path in root_path.iterdir():
+        # Check if a .mod file with the same name as the directory or archive already exists in the root directory
+        mod_file_path = root_path / (path.name + '.mod')
+        if mod_file_path.exists():
+            log(f"{mod_file_path} already exists", "info")
             continue
-        else:
-            if mod_folder_path.is_dir():
-                # print(mod_folder_path)
-                files = [f for f in mod_folder_path.iterdir() if f.is_file()]
-                for file in files:
-                    if file.suffix == '.mod':
-                        edit_mod(file)
-                    elif file.suffix in ('.zip', '.rar'):
-                        if not [i for i in mod_folder_path.glob('*.mod')]:
-                            print("INFO: " + str(file) + " is not a .mod, unpacking...")
-                            shutil.unpack_archive(str(file), str(mod_folder_path))
-                            files_new = [f for f in mod_folder_path.iterdir() if
-                                         f.is_file() and f.suffix == '.mod']
-                            for file_unpacked in files_new:
-                                edit_mod(file_unpacked)
 
-                        else:
-                            print("INFO: " + str(file) + " is already unpacked")
-                            continue
+        if path.is_dir():
+            # Check for .mod files in the directory
+            mod_files = [f for f in path.iterdir() if f.is_file() and f.suffix == '.mod']
+            for mod_file in mod_files:
+                install_mod(mod_file)
+
+            # Check for archives in the directory and unpack them
+            archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
+            for archive_file in archive_files:
+                mod_files_unpacked = unpack_archive(archive_file)
+                for mod_file_unpacked in mod_files_unpacked:
+                    install_mod(mod_file_unpacked)
+
+        elif path.is_file():
+            # Check if the file is an archive and unpack it
+            mod_files_unpacked = unpack_archive(path)
+            for mod_file_unpacked in mod_files_unpacked:
+                install_mod(mod_file_unpacked)
 
 
-            elif mod_folder_path.is_file():
-                if mod_folder_path.suffix in ('.zip', '.rar'):
-                    if not (root_path / (mod_folder_path.stem + '.mod')).exists():
-                        print("INFO: " + str(mod_folder_path) + " is not a .mod, unpacking...")
-                        shutil.unpack_archive(str(mod_folder_path), str(root_path / mod_folder_path.stem))
-                        files_new = [f for f in (root_path / mod_folder_path.stem).iterdir() if
-                                        f.is_file() and f.suffix == '.mod']
-                        for file_unpacked in files_new:
-                            edit_mod(file_unpacked)
-                            
-                    else:
-                        print("INFO: " + str(mod_folder_path) + " is already unpacked")
-                        continue
 main()
 
 input("Press Enter to exit...")
