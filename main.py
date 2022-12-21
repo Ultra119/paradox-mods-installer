@@ -57,27 +57,50 @@ def main():
         # Check if a .mod file with the same name as the directory or archive already exists in the root directory
         mod_file_path = root_path / (path.name + '.mod')
         if mod_file_path.exists():
-            log(f"{mod_file_path} already exists", "info")
+            # Skip installing if a modded .mod file with the same name already exists in the root directory
+            log(f"{mod_file_path} already exists, skipping installation", "info")
             continue
 
         if path.is_dir():
             # Check for .mod files in the directory
             mod_files = [f for f in path.iterdir() if f.is_file() and f.suffix == '.mod']
             for mod_file in mod_files:
+                # Skip installing if a modded .mod file with the same name already exists in the root directory
+                if (root_path / mod_file.name).exists():
+                    log(f"{mod_file} already installed, skipping installation", "info")
+                    continue
                 install_mod(mod_file)
 
             # Check for archives in the directory and unpack them
             archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
             for archive_file in archive_files:
+                # Skip unpacking the archive if a modded .mod file with the same name already exists in the root directory
+                if (root_path / archive_file.stem).exists():
+                    log(f"{archive_file} already installed, skipping installation", "info")
+                    continue
                 mod_files_unpacked = unpack_archive(archive_file)
                 for mod_file_unpacked in mod_files_unpacked:
+                    # Skip installing if a modded .mod file with the same name already exists in the root directory
+                    if (root_path / mod_file_unpacked.name).exists():
+                        log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                        continue
                     install_mod(mod_file_unpacked)
 
         elif path.is_file():
             # Check if the file is an archive and unpack it
-            mod_files_unpacked = unpack_archive(path)
-            for mod_file_unpacked in mod_files_unpacked:
-                install_mod(mod_file_unpacked)
+            if path.suffix in ('.zip', '.rar'):
+                # Skip unpacking the archive if a modded .mod file with the same name already exists in the root directory
+                if (root_path / path.stem).exists():
+                    log(f"{path} already installed, skipping installation", "info")
+                    continue
+                mod_files_unpacked = unpack_archive(path)
+                for mod_file_unpacked in mod_files_unpacked:
+                    # Skip installing if a modded .mod file with the same name already exists in the root directory
+                    if (root_path / mod_file_unpacked.name).exists():
+                        log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                        continue
+                    install_mod(mod_file_unpacked)
+
 
 
 main()
