@@ -41,8 +41,6 @@ def edit_mod(file_path: Path):
     # Log the name of the installed mod
     if mod_name is not None:
         log(f"{mod_name} installed!", "info")
-    else:
-        log(f"{file_path.parent} installed!", "info")
 
 
 def unpack_archive(archive_path: Path):
