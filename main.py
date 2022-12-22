@@ -1,6 +1,7 @@
 # Stellaris Mods Installer v1.3 by Ultra119
 
 import shutil
+import logging
 
 from pathlib import Path
 
@@ -46,10 +47,18 @@ def install_mod(mod_path: Path):
     else:
         log(f"{mod_path} is not a .mod file", "warning")
 
-def log(message: str, level: str):
-    # Prints the specified message to the console with a prefix indicating the log level.
-    print(f"[{level.upper()}] {message}")
+# Set up logging to a file and the console
+logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w', format='%(levelname)s: %(message)s')
+console = logging.StreamHandler()
+console.setLevel(logging.INFO)
+logging.getLogger().addHandler(console)
 
+def log(message: str, level: str):
+    # Write the specified message to the log file and console with a prefix indicating the log level.
+    if level == "info":
+        logging.info(f"[{level.upper()}] {message}")
+    elif level == "warning":
+        logging.warning(f"[{level.upper()}] {message}")
 
 def main():
     root_path = get_root_path()
