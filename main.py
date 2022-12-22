@@ -16,8 +16,15 @@ def edit_mod(file_path: Path):
     shutil.copy(str(file_path), str(mod_file_copy_path))
 
     with mod_file_copy_path.open("r+") as mod_file:
-        # Delete the line that starts with path=, if it is present in the file
+        # Extract the mod name from the 'name' field in the mod file
         lines = mod_file.readlines()
+        mod_name = None
+        for line in lines:
+            if line.startswith("name="):
+                mod_name = line.split("=")[1].strip()
+                break
+
+        # Delete the line that starts with path=, if it is present in the file
         mod_file.seek(0)
         for line in lines:
             if not line.startswith("path="):
@@ -27,7 +34,12 @@ def edit_mod(file_path: Path):
         # Add a new line at the end of the file with the full path from which the file was copied
         mod_file.write("\n" + "path=" + '"' + str(file_path.parent).replace("\\", "/") + '"' + "\n")
 
-    log(f"{file_path.parent} installed!", "info")
+    # Log the name of the installed mod
+    if mod_name is not None:
+        log(f"{mod_name} installed!", "info")
+    else:
+        log(f"{file_path.parent} installed!", "info")
+
 
 def unpack_archive(archive_path: Path):
     # Unpacks the specified archive to the root directory and returns a list of .mod files found in the unpacked
@@ -48,7 +60,7 @@ def install_mod(mod_path: Path):
         log(f"{mod_path} is not a .mod file", "warning")
 
 # Set up logging to a file and the console
-logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w', format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w', format='%(levelname)s: %(message)s (%(name)s)')
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 logging.getLogger().addHandler(console)
@@ -61,52 +73,77 @@ def log(message: str, level: str):
         logging.warning(f"[{level.upper()}] {message}")
 
 def main():
+    # Prompt the user for input
+    user_input = input("Enter 'I' to install all mods or 'V' to view installed mods: ")
     root_path = get_root_path()
-    for path in root_path.iterdir():
-        # Check if a .mod file with the same name as the directory or archive already exists in the root directory
-        mod_file_path = root_path / (path.name + '.mod')
-        if mod_file_path.exists():
-            # Skip installing if a modded .mod file with the same name already exists in the root directory
-            log(f"{mod_file_path} already exists, skipping installation", "info")
-            continue
-
-        if path.is_dir():
-            # Check for .mod files in the directory
-            mod_files = [f for f in path.iterdir() if f.is_file() and f.suffix == '.mod']
-            for mod_file in mod_files:
+    if user_input.upper() == "I":
+        for path in root_path.iterdir():
+            # Check if a .mod file with the same name as the directory or archive already exists in the root directory
+            mod_file_path = root_path / (path.name + '.mod')
+            if mod_file_path.exists():
                 # Skip installing if a modded .mod file with the same name already exists in the root directory
-                if (root_path / mod_file.name).exists():
-                    log(f"{mod_file} already installed, skipping installation", "info")
-                    continue
-                install_mod(mod_file)
+                log(f"{mod_file_path} already exists, skipping installation", "info")
+                continue
 
-            # Check for archives in the directory and unpack them
-            archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
-            for archive_file in archive_files:
-                mod_files_unpacked = unpack_archive(archive_file)
-                for mod_file_unpacked in mod_files_unpacked:
+            if path.is_dir():
+                # Check for .mod files in the directory
+                mod_files = [f for f in path.iterdir() if f.is_file() and f.suffix == '.mod']
+                for mod_file in mod_files:
                     # Skip installing if a modded .mod file with the same name already exists in the root directory
-                    if (root_path / mod_file_unpacked.name).exists():
-                        log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                    if (root_path / mod_file.name).exists():
+                        log(f"{mod_file} already installed, skipping installation", "info")
                         continue
-                    install_mod(mod_file_unpacked)
+                    install_mod(mod_file)
 
-        elif path.is_file():
-            # Check if the file is an archive and unpack it
-            if path.suffix in ('.zip', '.rar'):
-                # Skip unpacking the archive if a modded .mod file with the same name already exists in the root directory
-                if (root_path / path.stem).exists():
-                    log(f"{path} already installed, skipping installation", "info")
-                    continue
-                mod_files_unpacked = unpack_archive(path)
-                for mod_file_unpacked in mod_files_unpacked:
-                    # Skip installing if a modded .mod file with the same name already exists in the root directory
-                    if (root_path / mod_file_unpacked.name).exists():
-                        log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                # Check for archives in the directory and unpack them
+                archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
+                for archive_file in archive_files:
+                    mod_files_unpacked = unpack_archive(archive_file)
+                    for mod_file_unpacked in mod_files_unpacked:
+                        # Skip installing if a modded .mod file with the same name already exists in the root directory
+                        if (root_path / mod_file_unpacked.name).exists():
+                            log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                            continue
+                        install_mod(mod_file_unpacked)
+
+            elif path.is_file():
+                # Check if the file is an archive and unpack it
+                if path.suffix in ('.zip', '.rar'):
+                    # Skip unpacking the archive if a modded .mod file with the same name already exists in the root directory
+                    if (root_path / path.stem).exists():
+                        log(f"{path} already installed, skipping installation", "info")
                         continue
-                    install_mod(mod_file_unpacked)
+                    mod_files_unpacked = unpack_archive(path)
+                    for mod_file_unpacked in mod_files_unpacked:
+                        # Skip installing if a modded .mod file with the same name already exists in the root directory
+                        if (root_path / mod_file_unpacked.name).exists():
+                            log(f"{mod_file_unpacked} already installed, skipping installation", "info")
+                            continue
+                        install_mod(mod_file_unpacked)
 
+    # If the user wants to view installed mods
+    elif user_input.upper() == "V":
+        # Iterate through the .mod files in the root directory
+        counter = 1
+        for path in root_path.iterdir():
+            if path.suffix == '.mod':
+                # Extract the mod name and full path from the mod file
+                with path.open("r") as mod_file:
+                    lines = mod_file.readlines()
+                    mod_name = None
+                    mod_path = None
+                    for line in lines:
+                        if line.startswith("name="):
+                            mod_name = line.split("=")[1].strip()
+                        elif line.startswith("path="):
+                            mod_path = line.split("=")[1].strip()
+                # Print the mod number, name, and full path
+                print(f"{counter}. {mod_name} ({mod_path})")
+                counter += 1
 
+        # If the user entered an invalid option
+    else:
+        print("Invalid option. Please enter 'I' to install all mods or 'V' to view installed mods.")
 
 main()
 
