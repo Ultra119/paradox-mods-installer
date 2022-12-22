@@ -83,10 +83,6 @@ def main():
             # Check for archives in the directory and unpack them
             archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
             for archive_file in archive_files:
-                # Skip unpacking the archive if a modded .mod file with the same name already exists in the root directory
-                if (root_path / archive_file.stem).exists():
-                    log(f"{archive_file} already installed, skipping installation", "info")
-                    continue
                 mod_files_unpacked = unpack_archive(archive_file)
                 for mod_file_unpacked in mod_files_unpacked:
                     # Skip installing if a modded .mod file with the same name already exists in the root directory
