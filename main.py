@@ -1,13 +1,16 @@
-# Stellaris Mods Installer v1.3 by Ultra119
+# Stellaris Mods Installer v1.4 by Ultra119
 
 import shutil
 import logging
+import os
 
 from pathlib import Path
+
 
 def get_root_path():
     # Returns the current working directory as a Path object.
     return Path.cwd()
+
 
 def edit_mod(file_path: Path):
     # Copies the .mod file to the root directory and modifies its contents to include the full path of the original
@@ -62,18 +65,38 @@ def unpack_archive(archive_path: Path):
 def install_mod(mod_path: Path):
     # Installs the specified .mod file.
     if mod_path.suffix == '.mod':
-        try:
-            edit_mod(mod_path)
-        except Exception as e:
-            log(f"Error installing mod: {e}", "warning")
+        mod_file_copy_path = get_root_path() / (mod_path.parent.name + '.mod')
+        if mod_file_copy_path.exists():
+            # Mod with same name already exists in root directory
+            user_input = input(f"Mod with name '{mod_path.parent.name}' already exists in the root directory. "
+                               "Enter 'O' to overwrite or 'S' to skip: ")
+            if user_input.upper() == "O":
+                try:
+                    # Overwrite existing mod
+                    os.remove(str(mod_file_copy_path))
+                    edit_mod(mod_path)
+                except Exception as e:
+                    log(f"Error installing mod: {e}", "warning")
+            elif user_input.upper() == "S":
+                log(f"Installation of mod '{mod_path.parent.name}' skipped by user.", "info")
+            else:
+                log(f"Invalid input: {user_input}", "warning")
+        else:
+            try:
+                edit_mod(mod_path)
+            except Exception as e:
+                log(f"Error installing mod: {e}", "warning")
     else:
         log(f"{mod_path} is not a .mod file", "warning")
 
+
 # Set up logging to a file and the console
-logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w', format='%(levelname)s: %(message)s (%(name)s)')
+logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w',
+                    format='%(levelname)s: %(message)s (%(name)s)')
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 logging.getLogger().addHandler(console)
+
 
 def log(message: str, level: str):
     # Write the specified message to the log file and console with a prefix indicating the log level.
@@ -82,21 +105,33 @@ def log(message: str, level: str):
     elif level == "warning":
         logging.warning(f"[{level.upper()}] {message}")
 
+
 def main():
-    # Prompt the user for input
     try:
-        user_input = input("Enter 'I' to install all mods or 'V' to view installed mods: ")
+        # Print instructions to the user
+        global mod_file_unpacked
+        print("Welcome to the Stellaris Mods Installer!")
+        print("Enter 'I' to install all mods")
+        print("Enter 'V' to view installed mods")
+        print("Enter 'Q' to quit")
+
+        # Prompt the user for input
+        user_input = input("Enter your selection: ")
         root_path = get_root_path()
+
+        # Install all mods
         if user_input.upper() == "I":
+            log("Installing all mods...", "info")
             for path in root_path.iterdir():
                 # Check if a .mod file with the same name as the directory or archive already exists in the root directory
                 mod_file_path = root_path / (path.name + '.mod')
-                if mod_file_path.exists():
+                if mod_file_path.exists() and not root_path / path.name / (path.name + '.mod'):
                     # Skip installing if a modded .mod file with the same name already exists in the root directory
+                    # and not in the mod directory
                     log(f"{mod_file_path} already exists, skipping installation", "info")
                     continue
 
-                if path.is_dir():
+                elif path.is_dir():
                     # Check for .mod files in the directory
                     mod_files = [f for f in path.iterdir() if f.is_file() and f.suffix == '.mod']
                     for mod_file in mod_files:
@@ -104,7 +139,6 @@ def main():
                         if (root_path / mod_file.name).exists():
                             log(f"{mod_file} already installed, skipping installation", "info")
                             continue
-                        install_mod(mod_file)
 
                     # Check for archives in the directory and unpack them
                     archive_files = [f for f in path.iterdir() if f.is_file() and f.suffix in ('.zip', '.rar')]
@@ -116,7 +150,7 @@ def main():
                                 log(f"{mod_file_unpacked} already installed, skipping installation", "info")
                                 continue
                             install_mod(mod_file_unpacked)
-
+                # Install the mod
                 elif path.is_file():
                     # Check if the file is an archive and unpack it
                     if path.suffix in ('.zip', '.rar'):
@@ -132,8 +166,14 @@ def main():
                                 continue
                             install_mod(mod_file_unpacked)
 
-        # If the user wants to view installed mods
+            log("All mods installed!\n", "info")
+            input("Press Enter to continue...")
+            os.system('cls')
+            main()
+
+        # View installed mods
         elif user_input.upper() == "V":
+            log("Viewing installed mods...", "info")
             # Iterate through the .mod files in the root directory
             counter = 1
             for path in root_path.iterdir():
@@ -152,13 +192,20 @@ def main():
                     print(f"{counter}. {mod_name} ({mod_path})")
                     counter += 1
 
-            # If the user entered an invalid option
+            input("Press Enter to return...")
+            os.system('cls')
+            main()
+
+        # Quit
+        elif user_input.upper() == "Q":
+            log("Exiting...", "info")
+            exit()
         else:
-            print("Invalid option. Please enter 'I' to install all mods or 'V' to view installed mods.")
+            input("Invalid option. Press Enter to continue...")
+            os.system('cls')
+            main()
 
     except ValueError as e:
         log(str(e), "warning")
 
 main()
-
-input("Press Enter to exit...")
