@@ -68,19 +68,25 @@ def install_mod(mod_path: Path):
         mod_file_copy_path = get_root_path() / (mod_path.parent.name + '.mod')
         if mod_file_copy_path.exists():
             # Mod with same name already exists in root directory
-            user_input = input(f"Mod with name '{mod_path.parent.name}' already exists in the root directory. "
-                               "Enter 'O' to overwrite or 'S' to skip: ")
-            if user_input.upper() == "O":
+            while True:
                 try:
-                    # Overwrite existing mod
-                    os.remove(str(mod_file_copy_path))
-                    edit_mod(mod_path)
+                    user_input = input(f"Mod with name '{mod_path.parent.name}' already exists in the root directory. "
+                                   "Enter 'O' to overwrite or 'S' to skip: ")
+                    if user_input.upper() == "O":
+                        try:
+                            # Overwrite existing mod
+                            os.remove(str(mod_file_copy_path))
+                            edit_mod(mod_path)
+                            break
+                        except Exception as e:
+                            log(f"Error installing mod: {e}", "warning")
+                    elif user_input.upper() == "S":
+                        log(f"Installation of mod '{mod_path.parent.name}' skipped by user.", "info")
+                        break
+                    else:
+                        log(f"Invalid input: {user_input}", "warning")
                 except Exception as e:
-                    log(f"Error installing mod: {e}", "warning")
-            elif user_input.upper() == "S":
-                log(f"Installation of mod '{mod_path.parent.name}' skipped by user.", "info")
-            else:
-                log(f"Invalid input: {user_input}", "warning")
+                    log(f"Error: {e}", "warning")
         else:
             try:
                 edit_mod(mod_path)
