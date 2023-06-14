@@ -7,7 +7,7 @@ from mod_utils import get_root_path, edit_mod, unpack_archive, install_mod, log
 
 # Set up logging to a file and the console
 logging.basicConfig(level=logging.INFO, filename='mod_installer.log', filemode='w',
-                    format='%(levelname)s: %(message)s (%(name)s)')
+                    format='%(message)s (%(name)s)')
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 logging.getLogger().addHandler(console)
