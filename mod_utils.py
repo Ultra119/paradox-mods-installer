@@ -82,6 +82,7 @@ def install_mod(mod_path: Path):
             return
         elif user_input != 'O':
             log(f"Invalid input: {user_input}", "warning")
+            install_mod(mod_path)
             return
         try:
             os.remove(str(mod_file_copy_path))
